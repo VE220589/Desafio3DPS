@@ -1,0 +1,24 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# macOS
+.DS_Store
+
+# Variables de Entorno (¡Muy Importante!)
+.env
+.env.local
+
+# Expo Router
+.expo-shared/
+
+# TypeScript
+*.tsbuildinfo
