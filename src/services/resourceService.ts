@@ -23,7 +23,7 @@ export const resourceService = {
       ...ticketData,
       status: 'Abierto', // Estado inicial por defecto
       createdAt: new Date().toISOString(),
-      imageUrl: ticketData.imageUrl?.trim() || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&q=80',
+      imageUrl: ticketData.imageUrl?.trim() || 'https://i.postimg.cc/ZqDTYLYH/defaultimagehelpdesk.jpg',
     };
     const response = await api.post<Ticket>(RESOURCE_PATH, payload);
     return response.data;

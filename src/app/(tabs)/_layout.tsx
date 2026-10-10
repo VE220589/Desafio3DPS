@@ -27,7 +27,7 @@ export default function TabLayout(): JSX.Element {
         name="index"
         options={{
           title: 'Tickets',
-          headerTitle: 'Mesa de Ayuda · Tickets',
+          headerTitle: 'HELPDESK DPS · Tickets',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" size={size} color={color} />
           ),

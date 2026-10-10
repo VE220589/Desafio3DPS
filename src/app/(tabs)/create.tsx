@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert, 
+  ActivityIndicator, 
+  Image 
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
   TicketDepartment,
   TicketPriority,
@@ -25,6 +27,7 @@ import {
 
 export default function CreateTicketScreen(): JSX.Element {
   const router = useRouter();
+  const params = useLocalSearchParams<{ imageUri?: string }>();
 
   const [title, setTitle] = useState<string>('');
   const [department, setDepartment] = useState<TicketDepartment>('Sistemas');
@@ -34,6 +37,13 @@ export default function CreateTicketScreen(): JSX.Element {
 
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [enviando, setEnviando] = useState<boolean>(false);
+
+  // Detecta si regresamos de la cámara con una nueva foto
+  useEffect(() => {
+    if (params.imageUri) {
+      setImageUrl(params.imageUri);
+    }
+  }, [params.imageUri]);
 
   // Validación de formulario
   const validarFormulario = (): boolean => {
@@ -171,13 +181,24 @@ export default function CreateTicketScreen(): JSX.Element {
         errorMessage={errores.description}
       />
 
-      <CustomInput
-        label="URL de Evidencia o Foto (Opcional)"
-        placeholder="https://images.unsplash.com/..."
-        value={imageUrl}
-        onChangeText={setImageUrl}
-        autoCapitalize="none"
-      />
+      {/* SECCIÓN CORREGIDA DE LA CÁMARA */}
+      <View style={styles.imageSection}>
+        <Text style={styles.selectorLabel}>Evidencia Fotográfica (Opcional)</Text>
+        
+        {imageUrl ? (
+          <View style={styles.previewContainer}>
+            <Image source={{ uri: imageUrl }} style={styles.previewImage} />
+            <TouchableOpacity style={styles.btnRemoveImage} onPress={() => setImageUrl('')}>
+              <Ionicons name="trash" size={20} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.btnCamera} onPress={() => router.push('/camera')}>
+            <Ionicons name="camera" size={24} color={THEME_COLORS.accent} />
+            <Text style={styles.btnCameraText}>Tomar Fotografía</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       <TouchableOpacity
         style={[styles.submitButton, enviando && styles.buttonDisabled]}
@@ -260,5 +281,45 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     textTransform: 'uppercase',
+  },
+  imageSection: {
+    marginBottom: 16,
+  },
+  btnCamera: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: THEME_COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: THEME_COLORS.accent,
+    borderStyle: 'dashed',
+    borderRadius: 10,
+    paddingVertical: 20,
+    gap: 10,
+  },
+  btnCameraText: {
+    color: THEME_COLORS.accent,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  previewContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  btnRemoveImage: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: THEME_COLORS.danger,
+    padding: 8,
+    borderRadius: 20,
   },
 });

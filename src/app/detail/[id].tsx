@@ -9,6 +9,8 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,7 +77,7 @@ export default function TicketDetailScreen(): JSX.Element {
     cargarDetalleTicket();
   }, [id]);
 
-  // 2. PUT/PATCH — Cambio rápido de estado con confirmación (Requisito UX)
+  // 2. PUT/PATCH — Cambio rápido de estado con confirmación
   const handleCambiarEstado = (nuevoEstado: TicketStatus): void => {
     if (!ticket || nuevoEstado === ticket.status) return;
 
@@ -204,200 +206,220 @@ export default function TicketDetailScreen(): JSX.Element {
     : 'No registrada';
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      {/* Cabecera con imagen y resumen */}
-      <Image
-        source={{
-          uri:
-            ticket.imageUrl ||
-            'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&q=80',
-        }}
-        style={styles.heroImage}
-      />
+    <KeyboardAvoidingView
+      style={styles.keyboardContainer}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 25}
+    >
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          editando && styles.containerEditando,
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Cabecera con imagen y resumen */}
+        <Image
+          source={{
+            uri:
+              ticket.imageUrl ||
+              'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&q=80',
+          }}
+          style={styles.heroImage}
+        />
 
-      <View style={styles.cardHeader}>
-        <View style={styles.badgeRow}>
-          <View style={[styles.priorityBadge, { borderColor: priorityColor }]}>
-            <View style={[styles.dot, { backgroundColor: priorityColor }]} />
-            <Text style={[styles.priorityText, { color: priorityColor }]}>
-              Prioridad {ticket.priority}
-            </Text>
+        <View style={styles.cardHeader}>
+          <View style={styles.badgeRow}>
+            <View style={[styles.priorityBadge, { borderColor: priorityColor }]}>
+              <View style={[styles.dot, { backgroundColor: priorityColor }]} />
+              <Text style={[styles.priorityText, { color: priorityColor }]}>
+                Prioridad {ticket.priority}
+              </Text>
+            </View>
+
+            <View style={[styles.statusBadge, { backgroundColor: statusTheme.bg }]}>
+              <Text style={[styles.statusText, { color: statusTheme.text }]}>
+                {ticket.status}
+              </Text>
+            </View>
           </View>
 
-          <View style={[styles.statusBadge, { backgroundColor: statusTheme.bg }]}>
-            <Text style={[styles.statusText, { color: statusTheme.text }]}>
-              {ticket.status}
-            </Text>
-          </View>
+          <Text style={styles.ticketId}>TICKET #{ticket.id} · {ticket.department}</Text>
+          <Text style={styles.ticketTitle}>{ticket.title}</Text>
+          <Text style={styles.ticketDate}>📅 Registrado el {formattedDate}</Text>
         </View>
 
-        <Text style={styles.ticketId}>TICKET #{ticket.id} · {ticket.department}</Text>
-        <Text style={styles.ticketTitle}>{ticket.title}</Text>
-        <Text style={styles.ticketDate}>📅 Registrado el {formattedDate}</Text>
-      </View>
-
-      {/* Selector rápido de estado mediante Chips (Requisito UX) */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Actualizar Estado del Ticket</Text>
-        <Text style={styles.sectionSubtitle}>
-          Toca un estado para actualizarlo en tiempo real en la API:
-        </Text>
-        <View style={styles.statusChipsRow}>
-          {STATUSES.map((st) => {
-            const activo = ticket.status === st;
-            const theme = STATUS_COLORS[st];
-            return (
-              <TouchableOpacity
-                key={st}
-                style={[
-                  styles.statusChip,
-                  activo
-                    ? { backgroundColor: theme.text, borderColor: theme.text }
-                    : { backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border },
-                ]}
-                onPress={() => handleCambiarEstado(st)}
-                disabled={guardando}
-              >
-                <Text
-                  style={[
-                    styles.statusChipText,
-                    activo ? { color: '#FFFFFF' } : { color: THEME_COLORS.text },
-                  ]}
-                >
-                  {activo ? '✓ ' : ''}{st}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Modo Lectura vs Modo Edición */}
-      {!editando ? (
+        {/* Selector rápido de estado mediante Chips */}
         <View style={styles.sectionCard}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionTitle}>Descripción del Fallo</Text>
-            <TouchableOpacity onPress={() => setEditando(true)} style={styles.btnEditarInline}>
-              <Ionicons name="create-outline" size={16} color={THEME_COLORS.accent} />
-              <Text style={styles.btnEditarInlineText}>Editar</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.descriptionText}>{ticket.description}</Text>
-        </View>
-      ) : (
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Modificar Datos de la Incidencia</Text>
-
-          <CustomInput
-            label="Título *"
-            value={title}
-            onChangeText={setTitle}
-          />
-
-          <Text style={styles.fieldLabel}>Departamento</Text>
-          <View style={styles.chipsWrap}>
-            {DEPARTMENTS.map((dept) => (
-              <TouchableOpacity
-                key={dept}
-                style={[styles.smallChip, department === dept && styles.smallChipActive]}
-                onPress={() => setDepartment(dept)}
-              >
-                <Text style={[styles.smallChipText, department === dept && styles.smallChipTextActive]}>
-                  {dept}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.fieldLabel}>Prioridad</Text>
-          <View style={styles.chipsWrap}>
-            {PRIORITIES.map((p) => {
-              const color = PRIORITY_COLORS[p];
-              const activo = priority === p;
+          <Text style={styles.sectionTitle}>Actualizar Estado del Ticket</Text>
+          <Text style={styles.sectionSubtitle}>
+            Toca un estado para actualizarlo en tiempo real en la API:
+          </Text>
+          <View style={styles.statusChipsRow}>
+            {STATUSES.map((st) => {
+              const activo = ticket.status === st;
+              const theme = STATUS_COLORS[st];
               return (
                 <TouchableOpacity
-                  key={p}
+                  key={st}
                   style={[
-                    styles.smallChip,
-                    activo && { backgroundColor: color, borderColor: color },
+                    styles.statusChip,
+                    activo
+                      ? { backgroundColor: theme.text, borderColor: theme.text }
+                      : { backgroundColor: THEME_COLORS.surface, borderColor: THEME_COLORS.border },
                   ]}
-                  onPress={() => setPriority(p)}
+                  onPress={() => handleCambiarEstado(st)}
+                  disabled={guardando}
                 >
                   <Text
                     style={[
-                      styles.smallChipText,
+                      styles.statusChipText,
                       activo ? { color: '#FFFFFF' } : { color: THEME_COLORS.text },
                     ]}
                   >
-                    {p}
+                    {activo ? '✓ ' : ''}{st}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-
-          <CustomInput
-            label="Observaciones o Descripción *"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={4}
-          />
-
-          <View style={styles.editButtonsRow}>
-            <TouchableOpacity
-              style={styles.btnCancelar}
-              onPress={() => {
-                setEditando(false);
-                setTitle(ticket.title);
-                setDescription(ticket.description);
-                setDepartment(ticket.department);
-                setPriority(ticket.priority);
-              }}
-              disabled={guardando}
-            >
-              <Text style={styles.btnCancelarText}>Cancelar</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.btnGuardar}
-              onPress={handleGuardarCambios}
-              disabled={guardando}
-            >
-              {guardando ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.btnGuardarText}>Guardar Cambios</Text>
-              )}
-            </TouchableOpacity>
-          </View>
         </View>
-      )}
 
-      {/* Botón de Eliminación (DELETE) */}
-      <TouchableOpacity
-        style={[styles.btnEliminar, eliminando && styles.buttonDisabled]}
-        onPress={handleEliminarTicket}
-        disabled={eliminando || guardando}
-      >
-        {eliminando ? (
-          <ActivityIndicator color="#FFFFFF" size="small" />
+        {/* Modo Lectura vs Modo Edición */}
+        {!editando ? (
+          <View style={styles.sectionCard}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.sectionTitle}>Descripción del Fallo</Text>
+              <TouchableOpacity onPress={() => setEditando(true)} style={styles.btnEditarInline}>
+                <Ionicons name="create-outline" size={16} color={THEME_COLORS.accent} />
+                <Text style={styles.btnEditarInlineText}>Editar</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.descriptionText}>{ticket.description}</Text>
+          </View>
         ) : (
-          <>
-            <Ionicons name="trash-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-            <Text style={styles.btnEliminarText}>Eliminar o Anular Ticket</Text>
-          </>
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Modificar Datos de la Incidencia</Text>
+
+            <CustomInput
+              label="Título *"
+              value={title}
+              onChangeText={setTitle}
+            />
+
+            <Text style={styles.fieldLabel}>Departamento</Text>
+            <View style={styles.chipsWrap}>
+              {DEPARTMENTS.map((dept) => (
+                <TouchableOpacity
+                  key={dept}
+                  style={[styles.smallChip, department === dept && styles.smallChipActive]}
+                  onPress={() => setDepartment(dept)}
+                >
+                  <Text style={[styles.smallChipText, department === dept && styles.smallChipTextActive]}>
+                    {dept}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>Prioridad</Text>
+            <View style={styles.chipsWrap}>
+              {PRIORITIES.map((p) => {
+                const color = PRIORITY_COLORS[p];
+                const activo = priority === p;
+                return (
+                  <TouchableOpacity
+                    key={p}
+                    style={[
+                      styles.smallChip,
+                      activo && { backgroundColor: color, borderColor: color },
+                    ]}
+                    onPress={() => setPriority(p)}
+                  >
+                    <Text
+                      style={[
+                        styles.smallChipText,
+                        activo ? { color: '#FFFFFF' } : { color: THEME_COLORS.text },
+                      ]}
+                    >
+                      {p}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <CustomInput
+              label="Observaciones o Descripción *"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={4}
+            />
+
+            <View style={styles.editButtonsRow}>
+              <TouchableOpacity
+                style={styles.btnCancelar}
+                onPress={() => {
+                  setEditando(false);
+                  setTitle(ticket.title);
+                  setDescription(ticket.description);
+                  setDepartment(ticket.department);
+                  setPriority(ticket.priority);
+                }}
+                disabled={guardando}
+              >
+                <Text style={styles.btnCancelarText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.btnGuardar}
+                onPress={handleGuardarCambios}
+                disabled={guardando}
+              >
+                {guardando ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.btnGuardarText}>Guardar Cambios</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
-      </TouchableOpacity>
-    </ScrollView>
+
+        {/* Botón de Eliminación (DELETE) */}
+        <TouchableOpacity
+          style={[styles.btnEliminar, eliminando && styles.buttonDisabled]}
+          onPress={handleEliminarTicket}
+          disabled={eliminando || guardando}
+        >
+          {eliminando ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <>
+              <Ionicons name="trash-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.btnEliminarText}>Eliminar o Anular Ticket</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardContainer: {
+    flex: 1,
+    backgroundColor: THEME_COLORS.background,
+  },
   container: {
     padding: 16,
     backgroundColor: THEME_COLORS.background,
     paddingBottom: 40,
+  },
+  containerEditando: {
+    paddingBottom: 150, // Permite scrollear cómodamente por encima del teclado
   },
   centerContainer: {
     flex: 1,

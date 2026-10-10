@@ -1,4 +1,3 @@
-// src/app/_layout.tsx
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -27,6 +26,15 @@ export default function RootLayout(): JSX.Element {
             headerShown: true,
             headerBackTitle: 'Atrás',
           }}
+        />
+
+        {/* AQUÍ ESTÁ EL REGISTRO DE LA CÁMARA */}
+        <Stack.Screen 
+          name="camera" 
+          options={{ 
+            headerShown: false,
+            presentation: 'modal' // Se abre superpuesto de forma elegante
+          }} 
         />
       </Stack>
     </>
